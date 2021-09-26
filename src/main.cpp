@@ -73,7 +73,7 @@ int main ( int argc, char* argv[] ) {
 
 
 	terrainRenderTexture = genRenderTexture(width, height);
-	GLuint brickTex = readTexture("images/brick.jpg");
+//	GLuint brickTex = readTexture("images/brick.jpg");
 
 
 
@@ -108,10 +108,9 @@ int main ( int argc, char* argv[] ) {
 	while( !glfwWindowShouldClose(window) ) {
 
 		//compute shader
-		//glBindTexture(GL_TEXTURE_2D, terrainRenderTexture);
 		glBindImageTexture(0, terrainRenderTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		viewportShader.useProgram();
-		glDispatchCompute(1, 1, 1);
+		testComputeShader.useProgram();
+		glDispatchCompute(width/10, height/10, 1);
 
 		glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
@@ -119,8 +118,8 @@ int main ( int argc, char* argv[] ) {
 
 		// affichage sur l'écran
 		glBindVertexArray(VAO);
-//		glBindTexture(GL_TEXTURE_2D, terrainRenderTexture);
-		glBindTexture(GL_TEXTURE_2D, brickTex);
+		glBindTexture(GL_TEXTURE_2D, terrainRenderTexture);
+//		glBindTexture(GL_TEXTURE_2D, brickTex);
 
 		viewportShader.useProgram();
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
