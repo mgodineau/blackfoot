@@ -11,33 +11,25 @@
 #include <GLFW/glfw3.h>
 #include <VFShader.h>
 
-#include "ComputeShader.h"
-
 #include "stb_image.h"
 
 
-float viewportVertices[] =
-{
-	-1, -1, 0,
-	1, -1, 0,
-	-1, 1, 0,
-	1, 1, 0
-};
+#include "ComputeShader.h"
+#include "TerrainRenderer.h"
 
 
-unsigned int viewportTriangles[] =
-{
-	0, 1, 2,
-	1, 2, 3
-};
 
 
-GLuint terrainRenderTexture;
+
+
+//GLuint terrainRenderTexture;
+GLsizei m_width, m_height;
+
+//GLuint FBO;
+TerrainRenderer* terrain;
 
 
 void framebuffer_size_callback( GLFWwindow* window, int width, int height );
-void renderImage();
-GLuint genRenderTexture( GLuint width, GLuint height );
 GLuint readTexture( const std::string& filename );
 
 int main ( int argc, char* argv[] ) {
@@ -63,73 +55,29 @@ int main ( int argc, char* argv[] ) {
 	}
 
 
-	GLuint width = 600;
-	GLuint height = 400;
+	m_width = 600;
+	m_height = 400;
 
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, m_width, m_height);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 
 
 
-	terrainRenderTexture = genRenderTexture(width, height);
-//	GLuint brickTex = readTexture("images/brick.jpg");
-
-
-
-
-	//VAO
-	GLuint VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	//VBO
-	GLuint VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(viewportVertices), viewportVertices, GL_STATIC_DRAW );
-
-	//EBO
-	GLuint EBO;
-	glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(viewportTriangles), viewportTriangles, GL_STATIC_DRAW );
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindVertexArray(0); //unbinding the VAO
-
-
-	VFShader viewportShader("shaders/viewport.vert", "shaders/viewport.frag");
-	ComputeShader testComputeShader(std::string("shaders/tiles.compute"));
+	terrain = new TerrainRenderer(m_width, m_height);
 
 	//main loop
 	while( !glfwWindowShouldClose(window) ) {
 
-		//compute shader
-		glBindImageTexture(0, terrainRenderTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		testComputeShader.useProgram();
-		glDispatchCompute(width/10, height/10, 1);
 
-		glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
-
-
-
-		// affichage sur l'écran
-		glBindVertexArray(VAO);
-		glBindTexture(GL_TEXTURE_2D, terrainRenderTexture);
-//		glBindTexture(GL_TEXTURE_2D, brickTex);
-
-		viewportShader.useProgram();
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-
-
+		terrain->renderTerrain();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+
+	delete terrain;
 
 	glfwTerminate();
 	return 0;
@@ -137,34 +85,16 @@ int main ( int argc, char* argv[] ) {
 
 
 void framebuffer_size_callback( GLFWwindow* window, int width, int height ) {
-	glViewport(0, 0, width, height);
-	terrainRenderTexture = genRenderTexture(width, height);
+	m_width = width;
+	m_height = height;
+
+	terrain->updateSize(m_width, m_height);
+
+	glViewport(0, 0, m_width, m_height);
 }
 
 
-void renderImage() {
 
-}
-
-
-GLuint genRenderTexture( GLuint width, GLuint height ) {
-
-	GLuint texture;
-	glGenTextures(1, &texture);
-
-	glBindTexture( GL_TEXTURE_2D, texture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-
-
-	return texture;
-}
 
 
 GLuint readTexture( const std::string& filename ) {
