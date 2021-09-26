@@ -25,4 +25,5 @@ C_DEPS :=
 SUBDIRS := \
 glad/src \
 src \
+stb_image/include \
 

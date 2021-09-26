@@ -14,22 +14,18 @@
 
 #include <string>
 
+#include "AbstractShader.h"
 
-class ComputeShader {
 
-private:
-	const GLuint program;
+class ComputeShader : public AbstractShader {
+
 
 
 
 public:
 	ComputeShader( const std::string& filename );
-	ComputeShader( const ComputeShader& other );
 
 	virtual ~ComputeShader();
-
-
-	void useProgram() const;
 
 
 

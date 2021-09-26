@@ -8,6 +8,9 @@
 #include "AbstractShader.h"
 
 #include <fstream>
+#include <sstream>
+
+#include <iostream> //DEBUG
 
 
 AbstractShader::AbstractShader()
@@ -27,34 +30,42 @@ void AbstractShader::useProgram() const {
 }
 
 
-GLuint AbstractShader::createShader( const std::string& filename, GLenum shaderType ) {
+GLuint AbstractShader::createShader( const char* source, GLenum shaderType ) {
 
 
 	GLuint shader = glCreateShader(shaderType);
 
-	const std::string* fileContent = readFile(filename);
-	const char* fileContent_str = fileContent->c_str();
-	glShaderSource(shader, 1, &fileContent_str, NULL);
-	delete fileContent;
+//	const std::string* fileContent = readFile(filename);
+//	std::cout << *fileContent << std::endl;
 
+	const char* fileContent_str = source;
+	glShaderSource(shader, 1, &fileContent_str, NULL);
 	glCompileShader(shader);
 
-	glAttachShader(shader, program);
+	GLint success;
+	glGetShaderiv( shader, GL_COMPILE_STATUS, &success);
+	char infoLog[512];
+	glGetShaderInfoLog( shader, 512, NULL, infoLog );
+	std::cout << infoLog << std::endl;
+	if( !success ) {
+		throw std::runtime_error("Error while compiling the shader");
+	}
+
+	glAttachShader(program, shader);
+
 	return shader;
 }
 
-std::string* AbstractShader::readFile( const std::string& filename ) const {
-	std::string* content = new std::string();
+GLuint AbstractShader::createShaderFromFile( const std::string& filename, GLenum shaderType ) {
+	std::string content;
 
 	std::ifstream fileStream (filename);
-	while( fileStream.good() ) {
-		std::string line;
-		std::getline(fileStream, line);
-		*content += line + "\n";
-	}
-		fileStream.close();
+	std::stringstream strStream;
+	strStream << fileStream.rdbuf();
+	content = strStream.str();
 
 
-	return content;
+	return createShader(content.c_str(), shaderType);
+
 }
 

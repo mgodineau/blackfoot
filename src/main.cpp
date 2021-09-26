@@ -9,17 +9,19 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <VFShader.h>
 
 #include "ComputeShader.h"
-#include "Shader.h"
+
+#include "stb_image.h"
 
 
 float viewportVertices[] =
 {
-	0, 0, 0,
-	1, 0, 0,
-	0, 1, 0,
-	0.8f, 0.4f, 0
+	-1, -1, 0,
+	1, -1, 0,
+	-1, 1, 0,
+	1, 1, 0
 };
 
 
@@ -35,15 +37,17 @@ GLuint terrainRenderTexture;
 
 void framebuffer_size_callback( GLFWwindow* window, int width, int height );
 void renderImage();
+GLuint genRenderTexture( GLuint width, GLuint height );
+GLuint readTexture( const std::string& filename );
 
 int main ( int argc, char* argv[] ) {
 
 	glfwInit();
-	glfwWindowHint(GLFW_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE); //TODO changer pour CORE_PROFILE
 
-	GLFWwindow* window = glfwCreateWindow(600, 400, "ComancheLike", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(600, 400, "ComancheLike", NULL, NULL);
 	if( window == nullptr ) {
 		std::cerr << "failed to create glfw window." << std::endl;
 		glfwTerminate();
@@ -59,16 +63,19 @@ int main ( int argc, char* argv[] ) {
 	}
 
 
-	glViewport(0, 0, 600, 400);
+	GLuint width = 600;
+	GLuint height = 400;
 
-
+	glViewport(0, 0, width, height);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 
-	glGenTextures(1, &terrainRenderTexture);
-	glTexImage1D(GL_TEXTURE_2D, 0, GL_RGBA, 600, 400, GL_RGB, GL_BYTE, nullptr);
 
-	Shader viewportShader("shaders/viewport.vert", "shaders/viewport.frag");
+
+	terrainRenderTexture = genRenderTexture(width, height);
+	GLuint brickTex = readTexture("images/brick.jpg");
+
+
 
 
 	//VAO
@@ -93,23 +100,33 @@ int main ( int argc, char* argv[] ) {
 
 	glBindVertexArray(0); //unbinding the VAO
 
-//	try {
-//		ComputeShader testComputeShader(std::string("shaders/tiles.compute"));
-//	} catch ( const std::exception& e ) {
-//		std::cout << e.what() << std::endl;
-//	}
+
+	VFShader viewportShader("shaders/viewport.vert", "shaders/viewport.frag");
+	ComputeShader testComputeShader(std::string("shaders/tiles.compute"));
 
 	//main loop
 	while( !glfwWindowShouldClose(window) ) {
 
+		//compute shader
+		//glBindTexture(GL_TEXTURE_2D, terrainRenderTexture);
+		glBindImageTexture(0, terrainRenderTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		viewportShader.useProgram();
+		glDispatchCompute(1, 1, 1);
+
+		glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+
+
+		// affichage sur l'écran
 		glBindVertexArray(VAO);
-//		viewportShader.useProgram();
+//		glBindTexture(GL_TEXTURE_2D, terrainRenderTexture);
+		glBindTexture(GL_TEXTURE_2D, brickTex);
+
+		viewportShader.useProgram();
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
 
-//		glBindBuffer(ebo);
-//		glDrawElements(mode, count, type, indices)
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -122,10 +139,57 @@ int main ( int argc, char* argv[] ) {
 
 void framebuffer_size_callback( GLFWwindow* window, int width, int height ) {
 	glViewport(0, 0, width, height);
+	terrainRenderTexture = genRenderTexture(width, height);
 }
 
 
 void renderImage() {
 
 }
+
+
+GLuint genRenderTexture( GLuint width, GLuint height ) {
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+
+	glBindTexture( GL_TEXTURE_2D, texture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+
+
+	return texture;
+}
+
+
+GLuint readTexture( const std::string& filename ) {
+
+	int width, height, ch;
+	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &ch, 0);
+
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	stbi_image_free(data);
+
+	return texture;
+}
+
 

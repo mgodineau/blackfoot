@@ -8,18 +8,15 @@
 #ifndef ABSTRACTSHADER_H_
 #define ABSTRACTSHADER_H_
 
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <string>
 
-
 class AbstractShader {
 
 protected:
 	GLuint program;
-
 
 protected:
 	AbstractShader();
@@ -27,21 +24,14 @@ protected:
 public:
 	virtual ~AbstractShader();
 
-
 	void useProgram() const;
 
-
 //protected:
-	GLuint createShader( const std::string& filename, GLenum shaderType );
+	GLuint createShader(const char *source, GLenum shaderType);
 
-	std::string* readFile(const std::string& filename) const;
-
+	GLuint createShaderFromFile(const std::string &filename,
+			GLenum shaderType);
 
 };
-
-
-
-
-
 
 #endif /* ABSTRACTSHADER_H_ */
