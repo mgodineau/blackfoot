@@ -12,11 +12,20 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+
+#include "Texture.h"
+
 #include "ComputeShader.h"
 
 
 
 class TerrainRenderer {
+
+
+
+public:
+	Texture* heightmap;
+	Texture* colormap;
 
 private:
 	static GLsizei workGroupWidth;

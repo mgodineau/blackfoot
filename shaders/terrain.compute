@@ -3,13 +3,14 @@
 // limit = 1536 on weathley
 layout( local_size_x = 128, local_size_y = 1 ) in;
 
-//sampler2D heightmap;
-//sampler2D colormap;
+sampler2D heightmap;
+sampler2D colormap;
 
 layout(rgba32f, binding=0) uniform image2D color_output;
 layout(r32f, binding=1) uniform image2D depth_output;
 
-
+uniform uint sampleCount;
+uniform float sampleDists;
 
 
 void drawLine( uint x, uint yMax, vec4 color, float depth ) {

@@ -122,12 +122,12 @@ void TerrainRenderer::genSampleDists( GLsizei sampleCount ) {
 	}
 	float ratio= -1; //TODO
 
-	for( unsigned int i=1; i<m_sampleCount; i++ ) {
+	for( GLsizei i=1; i<m_sampleCount; i++ ) {
 		sampleDists[i] = sampleDists[i-1] + sampleDists[i-1] * sampleDists[i-1] * ratio;
 	}
 
 
-	glUniform1fv(location, m_sampleCount, sampleDists);
+//	glUniform1fv(location, m_sampleCount, sampleDists); TODO
 
 }
 
