@@ -10,7 +10,7 @@
 
 
 #include <glad/glad.h>
-#include <glfw/glfw3.h>
+#include <GLFW/glfw3.h>
 
 #include "ComputeShader.h"
 
@@ -30,8 +30,13 @@ private:
 
 	GLuint terrainFB;
 
+
+	GLsizei m_sampleCount;
+	GLfloat* sampleDists;
+
+
 public:
-	TerrainRenderer(GLsizei width, GLsizei height);
+	TerrainRenderer(GLsizei width, GLsizei height, GLsizei sampleCount = 100);
 
 
 	virtual ~TerrainRenderer();
@@ -41,11 +46,14 @@ public:
 
 	void updateSize( GLsizei width, GLsizei height );
 
+	void genSampleDists();
+	void genSampleDists( GLsizei sampleCount );
 
 private:
 	void deleteTextures();
 
 	void genTextures();
+
 
 };
 
