@@ -1,0 +1,15 @@
+(1)	d(i) / near = 1 / (1-h(i))
+(2)	h(i+1) = h(i) + deltaH
+
+
+(1)
+1 - h(i) = near / d(i)
+h(i) = 1 - near/d(i)
+
+
+(2) +(1)
+1 - near/d(i+1) = 1 - near/d(i) + deltaH
+near/d(i+1) = near/d(i) - deltaH
+1/d(i+1) = 1/d(i) - deltaH/near
+d(i+1) = (d(i) * near) / (near - deltaH * d(i))
+= 1 / (1/d(i) - deltaH / near)

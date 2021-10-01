@@ -53,16 +53,16 @@ TerrainRenderer::~TerrainRenderer() {
 void TerrainRenderer::renderTerrain() {
 
 
-//	glActiveTexture(GL_TEXTURE0);
-//	m_heightmap->bind();
+	glActiveTexture(GL_TEXTURE0);
+	m_heightmap->bind();
 
-//	glActiveTexture(GL_TEXTURE1);
-//	m_colormap->bind();
+	glActiveTexture(GL_TEXTURE1);
+	m_colormap->bind();
 
 	glBindImageTexture(0, colorTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	glBindImageTexture(1, depthTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, sampleDistsSBBO );
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, sampleDistsSBBO );
 
 	shader.useProgram();
 	glDispatchCompute(m_width / workGroupWidth + 1, 1, 1);
@@ -138,13 +138,20 @@ void TerrainRenderer::genSampleDists( GLsizei sampleCount ) {
 
 	GLfloat sampleDists[m_sampleCount];
 
-	if( m_sampleCount != 0 ) {
-		sampleDists[0] = 1.0f;
-	}
-	float ratio= -1; //TODO
 
-	for( GLuint i=1; i<m_sampleCount; i++ ) {
-		sampleDists[i] = sampleDists[i-1] + sampleDists[i-1] * sampleDists[i-1] * ratio;
+	const GLfloat near = 1.0f;
+	const GLfloat far = 100.0f;
+
+	if( m_sampleCount != 0 ) {
+		sampleDists[m_sampleCount-1] = near;
+		sampleDists[0] = far;
+	}
+
+	const float heightDelta = (1.0f - near / far) / m_sampleCount;
+	const float heightDeltaOverNear = heightDelta / near;
+
+	for( GLuint i=sampleCount-2; i>0; i-- ) {
+		sampleDists[i] = 1.0f / ( 1.0f/sampleDists[i+1] - heightDeltaOverNear );
 	}
 
 
@@ -152,8 +159,8 @@ void TerrainRenderer::genSampleDists( GLsizei sampleCount ) {
 
 
 	glUniform1ui( shader.getUniformLocation("sampleCount"), m_sampleCount );
-//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, sampleDistsSBBO);
-//	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * m_sampleCount, sampleDists, GL_STATIC_READ);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, sampleDistsSBBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * m_sampleCount, sampleDists, GL_STATIC_READ);
 
 }
 

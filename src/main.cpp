@@ -64,7 +64,7 @@ int main ( int argc, char* argv[] ) {
 
 
 	Texture heightmap("images/heightmap.jpg");
-	terrain = new TerrainRenderer(m_width, m_height, &heightmap, &heightmap, 20);
+	terrain = new TerrainRenderer(m_width, m_height, &heightmap, &heightmap, 200, 10);
 
 
 	//main loop

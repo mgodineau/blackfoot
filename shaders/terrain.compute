@@ -40,7 +40,7 @@ void main() {
 	uint x = gl_GlobalInvocationID.x;
 	
 	
-	vec2 rayDir = vec2( float(x) / imageSize(color_output).x - 1.0 , 1);
+	vec2 rayDir = vec2( (float(x) / imageSize(color_output).x - 0.5) * 2.0 , 1);
 	
 	
 	vec4 colorTmp = (gl_WorkGroupID.x % 2) == 0 ?
@@ -48,17 +48,18 @@ void main() {
 		vec4(0, 0.5, 1, 1);
 	
 	for( uint i=0; i<sampleCount; i++ ) {
-		//float currentDist = dists[i];
-		float currentDist = float(i) * 10.0;
-		//vec2 currentRay = rayDir * currentDist;
+	
+		float currentDist = dists[i];
+		vec2 samplePos = rayDir * currentDist;
 		
-		//float height = texture( heightmap, currentRay / terrainScale ).r;
-		float height = float(sampleCount-i) / sampleCount;
-		//float height = 0.5;
-		uint yMax = uint(float(imageSize(color_output).y) * height);
+		float height = texture( heightmap, samplePos / terrainScale ).r - 0.2;
+		//float height = -0.2;
+		
+		
+		uint yMax = uint( ((height - 0.5) / currentDist + 0.5) * imageSize(color_output).y );
 		
 		vec4 color = vec4( vec3(height), 1 );
-		//vec4 color = vec4( 0.5, 1, 0, 1 );
+		//vec4 color = vec4( float(i+1) / sampleCount );
 		
 		drawLine(x, yMax, color, currentDist);
 	}
