@@ -26,11 +26,17 @@ public:
 
 	void useProgram() const;
 
-//protected:
+	GLuint getUniformLocation( const GLchar* name ) const;
+
+	GLuint getProgram();
+
+protected:
 	GLuint createShader(const char *source, GLenum shaderType);
 
 	GLuint createShaderFromFile(const std::string &filename,
 			GLenum shaderType);
+
+
 
 };
 

@@ -24,8 +24,8 @@ class TerrainRenderer {
 
 
 public:
-	Texture* heightmap;
-	Texture* colormap;
+	const Texture* m_heightmap;
+	const Texture* m_colormap;
 
 private:
 	static GLsizei workGroupWidth;
@@ -40,12 +40,20 @@ private:
 	GLuint terrainFB;
 
 
-	GLsizei m_sampleCount;
-	GLfloat* sampleDists;
+	float m_terrainScale;
+	GLuint m_sampleCount;
+	GLuint sampleDistsSBBO;
+
 
 
 public:
-	TerrainRenderer(GLsizei width, GLsizei height, GLsizei sampleCount = 100);
+	TerrainRenderer(
+			GLsizei width,
+			GLsizei height,
+			const Texture* heightmap,
+			const Texture* colormap,
+			GLsizei sampleCount = 100,
+			float terrainScale = 100);
 
 
 	virtual ~TerrainRenderer();
@@ -58,10 +66,16 @@ public:
 	void genSampleDists();
 	void genSampleDists( GLsizei sampleCount );
 
+
+	void setTerrainScale( float terrainScale );
+
+	float getTerrainScale() const;
+
 private:
 	void deleteTextures();
 
 	void genTextures();
+
 
 
 };

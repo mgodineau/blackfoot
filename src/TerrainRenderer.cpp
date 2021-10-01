@@ -7,23 +7,36 @@
 
 #include <TerrainRenderer.h>
 
+#include <iostream>
 
 GLsizei TerrainRenderer::workGroupWidth = 128;
 
 
 
-TerrainRenderer::TerrainRenderer( GLsizei width, GLsizei height, GLsizei sampleCount ) :
+TerrainRenderer::TerrainRenderer(
+		GLsizei width,
+		GLsizei height,
+		const Texture* heightmap,
+		const Texture* colormap,
+		GLsizei sampleCount,
+		float terrainScale
+) :
+	m_heightmap(heightmap),
+	m_colormap(colormap),
 	m_width(width),
 	m_height(height),
 	shader("shaders/terrain.compute"),
 	colorTexture(),
 	depthTexture(),
 	terrainFB(),
+	m_terrainScale(terrainScale),
 	m_sampleCount( sampleCount ),
-	sampleDists(nullptr)
+	sampleDistsSBBO()
 {
 	glGenFramebuffers(1, &terrainFB);
+	glGenBuffers(1, &sampleDistsSBBO);
 
+	setTerrainScale(m_terrainScale);
 	genSampleDists();
 	genTextures();
 }
@@ -32,15 +45,24 @@ TerrainRenderer::TerrainRenderer( GLsizei width, GLsizei height, GLsizei sampleC
 
 TerrainRenderer::~TerrainRenderer() {
 	glDeleteFramebuffers(1, &terrainFB);
+	glDeleteBuffers(1, &sampleDistsSBBO);
 	deleteTextures();
-	delete[] sampleDists;
 }
 
 
 void TerrainRenderer::renderTerrain() {
 
+
+//	glActiveTexture(GL_TEXTURE0);
+//	m_heightmap->bind();
+
+//	glActiveTexture(GL_TEXTURE1);
+//	m_colormap->bind();
+
 	glBindImageTexture(0, colorTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 	glBindImageTexture(1, depthTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, sampleDistsSBBO );
 
 	shader.useProgram();
 	glDispatchCompute(m_width / workGroupWidth + 1, 1, 1);
@@ -114,21 +136,36 @@ void TerrainRenderer::genSampleDists( GLsizei sampleCount ) {
 
 	m_sampleCount = sampleCount;
 
-	delete[] sampleDists;
-	sampleDists = new GLfloat[m_sampleCount];
+	GLfloat sampleDists[m_sampleCount];
 
 	if( m_sampleCount != 0 ) {
 		sampleDists[0] = 1.0f;
 	}
 	float ratio= -1; //TODO
 
-	for( GLsizei i=1; i<m_sampleCount; i++ ) {
+	for( GLuint i=1; i<m_sampleCount; i++ ) {
 		sampleDists[i] = sampleDists[i-1] + sampleDists[i-1] * sampleDists[i-1] * ratio;
 	}
 
 
-//	glUniform1fv(location, m_sampleCount, sampleDists); TODO
+	shader.useProgram();
+
+
+	glUniform1ui( shader.getUniformLocation("sampleCount"), m_sampleCount );
+//	glBindBuffer(GL_SHADER_STORAGE_BUFFER, sampleDistsSBBO);
+//	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * m_sampleCount, sampleDists, GL_STATIC_READ);
 
 }
 
+
+void TerrainRenderer::setTerrainScale( float terrainScale ) {
+	m_terrainScale = terrainScale;
+
+	shader.useProgram();
+	glUniform1f( shader.getUniformLocation("terrainScale"), m_terrainScale );
+}
+
+float TerrainRenderer::getTerrainScale() const {
+	return m_terrainScale;
+}
 

@@ -30,6 +30,14 @@ void AbstractShader::useProgram() const {
 }
 
 
+GLuint AbstractShader::getUniformLocation(const GLchar* name) const {
+	return glGetUniformLocation(program, name);
+}
+
+GLuint AbstractShader::getProgram() {
+	return program;
+}
+
 GLuint AbstractShader::createShader( const char* source, GLenum shaderType ) {
 
 
@@ -68,4 +76,7 @@ GLuint AbstractShader::createShaderFromFile( const std::string& filename, GLenum
 	return createShader(content.c_str(), shaderType);
 
 }
+
+
+
 

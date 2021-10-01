@@ -3,14 +3,23 @@
 // limit = 1536 on weathley
 layout( local_size_x = 128, local_size_y = 1 ) in;
 
-sampler2D heightmap;
-sampler2D colormap;
-
+//outputs
 layout(rgba32f, binding=0) uniform image2D color_output;
 layout(r32f, binding=1) uniform image2D depth_output;
 
-uniform uint sampleCount;
-uniform float sampleDists;
+//textures
+uniform sampler2D heightmap;
+uniform sampler2D colormap;
+
+
+//inputs
+uniform float terrainScale;
+
+uniform uint sampleCount = 10;
+layout(std430, binding=3) buffer sampleDists {
+	float dists[];
+};
+
 
 
 void drawLine( uint x, uint yMax, vec4 color, float depth ) {
@@ -27,14 +36,34 @@ void drawLine( uint x, uint yMax, vec4 color, float depth ) {
 
 void main() {
 	
-	vec4 color = (gl_WorkGroupID.x % 2) == 0 ?
-		vec4(1, 0.5, 0, 1) :
-		vec4(0, 0.5, 1, 1);
 	
 	uint x = gl_GlobalInvocationID.x;
 	
 	
+	vec2 rayDir = vec2( float(x) / imageSize(color_output).x - 1.0 , 1);
 	
-	drawLine( gl_GlobalInvocationID.x, 50, color, 0.5 );
+	
+	vec4 colorTmp = (gl_WorkGroupID.x % 2) == 0 ?
+		vec4(1, 0.5, 0, 1) :
+		vec4(0, 0.5, 1, 1);
+	
+	for( uint i=0; i<sampleCount; i++ ) {
+		//float currentDist = dists[i];
+		float currentDist = float(i) * 10.0;
+		//vec2 currentRay = rayDir * currentDist;
+		
+		//float height = texture( heightmap, currentRay / terrainScale ).r;
+		float height = float(sampleCount-i) / sampleCount;
+		//float height = 0.5;
+		uint yMax = uint(float(imageSize(color_output).y) * height);
+		
+		vec4 color = vec4( vec3(height), 1 );
+		//vec4 color = vec4( 0.5, 1, 0, 1 );
+		
+		drawLine(x, yMax, color, currentDist);
+	}
+	
+	
+	//drawLine( x, 50, colorTmp, 0.5 );
 	
 }
