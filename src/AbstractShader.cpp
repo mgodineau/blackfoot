@@ -38,6 +38,13 @@ GLuint AbstractShader::getProgram() {
 	return program;
 }
 
+
+void AbstractShader::setUniform1i( const GLchar* name, GLint value ) {
+	useProgram();
+	glUniform1i( getUniformLocation(name), value);
+}
+
+
 GLuint AbstractShader::createShader( const char* source, GLenum shaderType ) {
 
 

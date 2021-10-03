@@ -61,25 +61,37 @@ int main ( int argc, char* argv[] ) {
 	glViewport(0, 0, m_width, m_height);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-
-
-	Texture heightmap("images/heightmap.jpg");
-	terrain = new TerrainRenderer(m_width, m_height, &heightmap, &heightmap, 200, 10);
-
-
+	terrain = nullptr;
+	Texture* heightmap = nullptr;
+	Texture* colormap = nullptr;
+	
+	try {
+//		heightmap = new Texture("images/heightmap.jpg");
+		heightmap = new Texture("images/terrain/height/D16rgb.png");
+		colormap = new Texture("images/terrain/color/C16W.png");
+	
+		terrain = new TerrainRenderer(m_width, m_height, heightmap, colormap, 50);
+	} catch( const std::exception& e ) {
+		std::cout << e.what() << std::endl;
+	}
+	
 	//main loop
 	while( !glfwWindowShouldClose(window) ) {
-
-
+		
+//		double start = glfwGetTime();
+		
 		terrain->renderTerrain();
-
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		
+//		double time = glfwGetTime() - start;
+//		std::cout << "time = " << time << "s; fps = " << 1.0/time << std::endl;
 	}
-
-
+	
+	
 	delete terrain;
-
+	
 	glfwTerminate();
 	return 0;
 }
@@ -88,38 +100,9 @@ int main ( int argc, char* argv[] ) {
 void framebuffer_size_callback( GLFWwindow* window, int width, int height ) {
 	m_width = width;
 	m_height = height;
-
+	
 	terrain->updateSize(m_width, m_height);
-
+	
 	glViewport(0, 0, m_width, m_height);
 }
-
-
-
-
-
-GLuint readTexture( const std::string& filename ) {
-
-	int width, height, ch;
-	unsigned char* data = stbi_load(filename.c_str(), &width, &height, &ch, 0);
-
-
-	GLuint texture;
-	glGenTextures(1, &texture);
-
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	stbi_image_free(data);
-
-	return texture;
-}
-
 

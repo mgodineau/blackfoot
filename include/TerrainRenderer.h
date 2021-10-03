@@ -45,14 +45,12 @@ private:
 	GLuint sampleDistsSBBO;
 
 
-
 public:
 	TerrainRenderer(
 			GLsizei width,
 			GLsizei height,
 			const Texture* heightmap,
 			const Texture* colormap,
-			GLsizei sampleCount = 100,
 			float terrainScale = 100);
 
 

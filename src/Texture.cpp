@@ -5,6 +5,9 @@
  *      Author: Mathieu
  */
 
+#include <system_error>
+
+
 #include <Texture.h>
 
 #include <stb_image.h>
@@ -26,6 +29,11 @@ Texture::Texture( const std::string& filename ) :
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	data = stbi_load(filename.c_str(), &width, &height, &ch, 0);
+	if( !data ) {
+		std::string msg = "unable to open the file \"" + filename + "\"";
+		throw std::system_error( std::error_code(), msg );
+	}
+
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	stbi_image_free(data);
 }

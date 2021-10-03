@@ -18,7 +18,6 @@ TerrainRenderer::TerrainRenderer(
 		GLsizei height,
 		const Texture* heightmap,
 		const Texture* colormap,
-		GLsizei sampleCount,
 		float terrainScale
 ) :
 	m_heightmap(heightmap),
@@ -30,9 +29,12 @@ TerrainRenderer::TerrainRenderer(
 	depthTexture(),
 	terrainFB(),
 	m_terrainScale(terrainScale),
-	m_sampleCount( sampleCount ),
+	m_sampleCount( height ),
 	sampleDistsSBBO()
 {
+	shader.setUniform1i( "heightmap", 0 );
+	shader.setUniform1i( "colormap", 1 );
+
 	glGenFramebuffers(1, &terrainFB);
 	glGenBuffers(1, &sampleDistsSBBO);
 
@@ -89,6 +91,7 @@ void TerrainRenderer::updateSize( GLsizei width, GLsizei height ) {
 
 	deleteTextures();
 	genTextures();
+	genSampleDists(height);
 }
 
 
@@ -143,15 +146,15 @@ void TerrainRenderer::genSampleDists( GLsizei sampleCount ) {
 	const GLfloat far = 100.0f;
 
 	if( m_sampleCount != 0 ) {
-		sampleDists[m_sampleCount-1] = near;
-		sampleDists[0] = far;
+		sampleDists[0] = near;
+		sampleDists[m_sampleCount-1] = far;
 	}
 
 	const float heightDelta = (1.0f - near / far) / m_sampleCount;
 	const float heightDeltaOverNear = heightDelta / near;
 
-	for( GLuint i=sampleCount-2; i>0; i-- ) {
-		sampleDists[i] = 1.0f / ( 1.0f/sampleDists[i+1] - heightDeltaOverNear );
+	for( GLuint i=1; i<m_sampleCount-1; i++ ) {
+		sampleDists[i] = 1.0f / ( 1.0f/sampleDists[i-1] - heightDeltaOverNear );
 	}
 
 

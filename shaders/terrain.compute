@@ -22,10 +22,18 @@ layout(std430, binding=3) buffer sampleDists {
 
 
 
-void drawLine( uint x, uint yMax, vec4 color, float depth ) {
+void drawLine( uint x, uint yMin, uint yMax, vec4 colorDown, vec4 colorUp, float depth ) {
 	
-	for( ivec2 coords = ivec2(x, 0); coords.y<=yMax; coords.y++ ) {
-		imageStore(color_output, coords, color );
+	for( ivec2 coords = ivec2(x, yMin); coords.y<yMax; coords.y++ ) {
+	
+		float colorRatio = float(coords.y+1 - yMin) / (yMax - yMin);
+		vec4 currentColor = colorDown + (colorUp-colorDown) * colorRatio;
+		
+		//vec4 col1 = vec4(1, 0, 0, 1);
+		//vec4 col2 = vec4(0, 1, 0, 1);
+		//vec4 currentColor = col1+ (col2-col1) * colorRatio;
+		
+		imageStore(color_output, coords, currentColor );
 		imageStore(depth_output, coords, vec4(depth) );
 	}
 	
@@ -47,21 +55,28 @@ void main() {
 		vec4(1, 0.5, 0, 1) :
 		vec4(0, 0.5, 1, 1);
 	
+	vec4 previousColor = vec4(0, 0, 0, 1);
+	uint previousY = 0;
+	
 	for( uint i=0; i<sampleCount; i++ ) {
 	
 		float currentDist = dists[i];
-		vec2 samplePos = rayDir * currentDist;
+		vec2 samplePos = rayDir * currentDist / terrainScale;
 		
-		float height = texture( heightmap, samplePos / terrainScale ).r - 0.2;
-		//float height = -0.2;
+		float height = (texture( heightmap, samplePos).r - 0.2) * 2;
 		
 		
-		uint yMax = uint( ((height - 0.5) / currentDist + 0.5) * imageSize(color_output).y );
+		uint currentY = uint( ((height - 0.5) / currentDist + 0.5) * imageSize(color_output).y );
 		
-		vec4 color = vec4( vec3(height), 1 );
-		//vec4 color = vec4( float(i+1) / sampleCount );
+		//vec4 color = vec4( vec3(height), 1 );
+		vec4 color = texture(colormap, samplePos);
+		//vec4 color = vec4(1, .5, 0, 1);
 		
-		drawLine(x, yMax, color, currentDist);
+		if( currentY > previousY ) {
+			drawLine(x, previousY, currentY, previousColor, color, currentDist);
+			previousY = currentY;
+			previousColor = color;
+		}
 	}
 	
 	

@@ -30,6 +30,10 @@ public:
 
 	GLuint getProgram();
 
+
+	void setUniform1i( const GLchar* name, GLint value );
+
+
 protected:
 	GLuint createShader(const char *source, GLenum shaderType);
 
